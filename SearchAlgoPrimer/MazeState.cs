@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Collections.Specialized.BitVector32;
+using ScoreType = System.Int64;
 
 namespace SearchAlgoPrimer
 {
@@ -21,6 +22,7 @@ namespace SearchAlgoPrimer
 
         public Coord character_ = new Coord();
         public int game_score_ = 0;
+        public ScoreType evaluated_score_ = 0; // 探索上で評価したスコア
         public MazeState() {}
 
         public MazeState(int seed)
@@ -44,6 +46,12 @@ namespace SearchAlgoPrimer
         public bool isDone()
         {
             return this.turn_ == END_TURN;
+        }
+
+        // [どのゲームでも実装する] : 探索用の盤面評価をする
+        public void evaluateScore()
+        {
+            this.evaluated_score_ = this.game_score_; // 簡単のため、まずはゲームスコアをそのまま盤面の評価とする
         }
 
         // [どのゲームでも実装する] : 指定したactionでゲームを1ターン進める
