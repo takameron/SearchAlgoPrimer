@@ -26,6 +26,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
             foreach (var action in legal_actions)
             {
                 State now_state = state;
+                now_state.points_ = (int[,])state.points_.Clone();
                 now_state.advance(action);
                 now_state.evaluateScore();
                 if (now_state.evaluated_score_ > best_score)
@@ -41,7 +42,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
         static void playGame(int seed)
         {
             var state = new State(seed);
-                Console.WriteLine(state.ToString());
+            Console.WriteLine(state.ToString());
             while (!state.isDone())
             {
                 //state.advance(randomAction(state));

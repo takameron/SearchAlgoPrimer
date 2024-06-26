@@ -17,7 +17,7 @@ namespace SearchAlgoPrimer
 
         private static int[] dx = new int[]{ 1, -1, 0, 0 }; // 右、左、下、上への移動方向のx成分
         private static int[] dy = new int[] { 0, 0, 1, -1 }; // 右、左、下、上への移動方向のy成分
-        private int[,] points_ = new int[H,W];
+        public int[,] points_ = new int[H,W];
         private int turn_ = 0;
 
         public Coord character_ = new Coord();
@@ -113,7 +113,7 @@ namespace SearchAlgoPrimer
             return ss;
         }
 
-    public struct Coord
+        public struct Coord
         {
             public Coord(int x, int y)
             {
