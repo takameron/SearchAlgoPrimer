@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Collections.Specialized.BitVector32;
+using static System.Net.Mime.MediaTypeNames;
 using ScoreType = System.Int64;
 
 namespace SearchAlgoPrimer
@@ -13,7 +14,7 @@ namespace SearchAlgoPrimer
     {
         public const int H = 3;
         public const int W = 4;
-        const int END_TURN = 4;
+        public const int END_TURN = 4;
 
         private static int[] dx = new int[]{ 1, -1, 0, 0 }; // 右、左、下、上への移動方向のx成分
         private static int[] dy = new int[] { 0, 0, 1, -1 }; // 右、左、下、上への移動方向のy成分
@@ -23,7 +24,7 @@ namespace SearchAlgoPrimer
         public Coord character_ = new Coord();
         public int game_score_ = 0;
         public ScoreType evaluated_score_ = 0; // 探索上で評価したスコア
-        public MazeState() {}
+        public int first_action_ = -1; // 最初に選択した行動
 
         public MazeState(int seed)
         {
@@ -84,6 +85,15 @@ namespace SearchAlgoPrimer
             return actions;
         }
 
+        public class MazeStateComparer : IComparer<MazeState>
+        {
+            public int Compare(MazeState x, MazeState y)
+            {
+                // xとyを反転させることで、数字が大きいほうが優先度が高い
+                return y.evaluated_score_.CompareTo(x.evaluated_score_);
+            }
+        }
+
         override
         public string ToString()
         {
@@ -111,6 +121,16 @@ namespace SearchAlgoPrimer
                 ss += '\n';
             }
             return ss;
+        }
+
+        /**
+         * 複製する
+         */
+        public MazeState copy()
+        {
+            MazeState state = this;
+            state.points_ = (int[,])this.points_.Clone();
+            return state;
         }
 
         public struct Coord
