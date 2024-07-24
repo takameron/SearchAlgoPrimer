@@ -128,7 +128,7 @@ namespace SearchAlgoPrimer
          */
         public MazeState copy()
         {
-            MazeState state = this;
+            MazeState state = (MazeState)MemberwiseClone();
             state.points_ = (int[,])this.points_.Clone();
             return state;
         }
