@@ -12,13 +12,13 @@ namespace SearchAlgoPrimer
 
     internal class MazeState
     {
-        public const int H = 3;
-        public const int W = 4;
-        public const int END_TURN = 4;
+        public int H = 3;
+        public int W = 4;
+        public int END_TURN = 4;
 
-        private static int[] dx = new int[]{ 1, -1, 0, 0 }; // 右、左、下、上への移動方向のx成分
-        private static int[] dy = new int[] { 0, 0, 1, -1 }; // 右、左、下、上への移動方向のy成分
-        public int[,] points_ = new int[H,W];
+        public static int[] dx = new int[]{ 1, -1, 0, 0 }; // 右、左、下、上への移動方向のx成分
+        public static int[] dy = new int[] { 0, 0, 1, -1 }; // 右、左、下、上への移動方向のy成分
+        public int[,] points_;
         private int turn_ = 0;
 
         public Coord character_ = new Coord();
@@ -28,6 +28,7 @@ namespace SearchAlgoPrimer
 
         public MazeState(int seed)
         {
+            this.points_ = new int[H, W];
             Random rand = new Random(seed);
             this.character_.y_ = rand.Next(H);
             this.character_.x_ = rand.Next(W);
@@ -42,6 +43,18 @@ namespace SearchAlgoPrimer
                     this.points_[y,x] = rand.Next(10);
                 }
         }
+
+        public MazeState(int width, int height, int endTern, int turn, int character_x, int character_y, int[,] points)
+        {
+            this.W = width;
+            this.H = height;
+            this.END_TURN = endTern;
+            this.turn_ = turn;
+            this.character_.x_ = character_x;
+            this.character_.y_ = character_y;
+            this.points_ = (int[,])points.Clone();
+        }
+
 
         // [どのゲームでも実装する] : ゲームの終了判定
         public bool isDone()
@@ -97,6 +110,7 @@ namespace SearchAlgoPrimer
         override
         public string ToString()
         {
+            int padding = 3;
             string ss = "";
             ss += $"turn:\t {this.turn_}\n";
             ss += $"score:\t {this.game_score_}\n";
@@ -107,15 +121,15 @@ namespace SearchAlgoPrimer
                 {
                     if (this.character_.y_ == h && this.character_.x_ == w)
                     {
-                        ss += '@';
+                        ss += '@'.ToString().PadLeft(padding);
                     }
                     else if (this.points_[h,w] > 0)
                     {
-                        ss += points_[h,w];
+                        ss += points_[h,w].ToString().PadLeft(padding);
                     }
                     else
                     {
-                        ss += '.';
+                        ss += '.'.ToString().PadLeft(padding);
                     }
                 }
                 ss += '\n';
