@@ -109,6 +109,8 @@ namespace MyApp // Note: actual namespace depends on the project name.
             DateTimeOffset now = DateTimeOffset.UtcNow;
             int sleepTime = (int)Math.Max((long)start * 1000 - now.ToUnixTimeMilliseconds(), 0);
             Thread.Sleep(sleepTime);
+            int prevNx = -1;
+            int prevNy = -1;
             while (true)
             {
                 // ターン情報を取得
@@ -119,7 +121,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     return;
                 }
                 // 盤面を変換する
-                var agent = playVerbose.players[0].agents[0];
+                var agent = playVerbose.players[OWN_PLAYER].agents[0];
                 // 初期座標であれば適当な場所に置く
                 if (agent.x == -1 || agent.y == -1)
                 {
@@ -127,8 +129,8 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     {
                         agentId = 0,
                         type = KakomimasuClient.SendActionType.PUT,
-                        x = 4,
-                        y = 4
+                        x = 6,
+                        y = 6
                     };
                     // 動きを送信する
                     var firstActionInfo = new KakomimasuClient.SendActionInfo();
@@ -161,6 +163,12 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     var nx = state.character_.x_ + State.dx[action];
                     var ny = state.character_.y_ + State.dy[action];
                     var type = playVerbose.field.tiles[ny * width + nx].type == KakomimasuClient.TileType.WALL && playVerbose.field.tiles[ny * width + nx].player != OWN_PLAYER ? KakomimasuClient.SendActionType.REMOVE : KakomimasuClient.SendActionType.MOVE;
+                    // 前回と同じ座標だったら移動しない
+                    if (nx == prevNx && ny == prevNy && type == KakomimasuClient.SendActionType.MOVE) 
+                    {
+                        nx = state.character_.x_;
+                        ny = state.character_.y_;
+                    }
                     var kakomimasuAction = new KakomimasuClient.SendAction()
                     {
                         agentId = 0,
@@ -173,6 +181,9 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     sendActionInfo.dryRun = false;
                     sendActionInfo.actions = new KakomimasuClient.SendAction[] { kakomimasuAction };
                     var res = client.sendActions(connectionInfo, sendActionInfo).Result;
+                    // 前回の座標を更新
+                    prevNx = nx;
+                    prevNy = ny;
                 }
                 // 待つ
                 now = DateTime.Now;
