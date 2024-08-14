@@ -26,7 +26,7 @@ namespace SearchAlgoPrimer
             string startUrl = $"{baseUrl}/v1/matches/ai/players";
             var startPayload = new JoinInfo
             {
-                guestName = "C#くん",
+                guestName = "🍈C#くん",
                 aiName = "a1",
                 boardName = "A-1",
                 nAgent = 1
@@ -83,7 +83,7 @@ namespace SearchAlgoPrimer
         /**
          *  相手のターンを待つ
          */
-        private async Task<(PlayVerbose, HttpStatusCode)> wait(ConnectionInfo connectionInfo)
+        private async Task<PlayVerbose> wait(ConnectionInfo connectionInfo)
         {
             string gameUrl = $"{baseUrl}/v1/matches/{connectionInfo.gameId}";
 
@@ -91,16 +91,15 @@ namespace SearchAlgoPrimer
             while (true)
             {
                 HttpResponseMessage? waitStartResponse = await client.GetAsync(gameUrl);
-                string waitStartResponseBody = await waitStartResponse.Content.ReadAsStringAsync();
-                JsonElement game = JsonDocument.Parse(waitStartResponseBody).RootElement;
-                PlayVerbose playVerbose = JsonSerializer.Deserialize<PlayVerbose>(game.GetRawText(), jsonOptions);
-
-                if (game.GetProperty("startedAtUnixTime").GetInt64() != 0)
+                if (waitStartResponse.StatusCode != HttpStatusCode.OK)
                 {
-                    return (playVerbose, waitStartResponse.StatusCode);
+                    await Task.Delay(100);
+                    continue;
                 }
 
-                await Task.Delay(100);
+                string waitStartResponseBody = await waitStartResponse.Content.ReadAsStringAsync();
+                JsonElement game = JsonDocument.Parse(waitStartResponseBody).RootElement;
+                return JsonSerializer.Deserialize<PlayVerbose>(game.GetRawText(), jsonOptions);
             }
         }
 
@@ -108,8 +107,7 @@ namespace SearchAlgoPrimer
         {
             while (true)
             {
-                var res = await wait(connectionInfo);
-                var playVerbose = res.Item1;
+                var playVerbose = await wait(connectionInfo);
 
                 if (playVerbose.startedAtUnixTime != 0)
                 {
@@ -122,19 +120,7 @@ namespace SearchAlgoPrimer
 
         public async Task<PlayVerbose> getPlayVerbose(ConnectionInfo connectionInfo)
         {
-            while (true)
-            {
-                var res = await wait(connectionInfo);
-                var playVerbose = res.Item1;
-                var statusCode = res.Item2;
-
-                if (statusCode == HttpStatusCode.OK)
-                {
-                    return playVerbose;
-                }
-
-                await Task.Delay(100);
-            }
+            return await wait(connectionInfo);
         }
 
         /**

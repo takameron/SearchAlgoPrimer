@@ -95,6 +95,8 @@ namespace MyApp // Note: actual namespace depends on the project name.
 
         static async void playKakomimasu()
         {
+            const int OWN_PLAYER = 0;
+
             KakomimasuClient client = new KakomimasuClient();
             // 参加する
             var connectionInfo = client.join().Result;
@@ -144,7 +146,10 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     {
                         for (int x = 0; x < width; x++)
                         {
-                            points[y, x] = playVerbose.field.points[y * width + x];
+                            var tile = playVerbose.field.tiles[y * width + x];
+                            int point = playVerbose.field.points[y * width + x];
+                            int convPoint = tile.player == OWN_PLAYER && tile.type == KakomimasuClient.TileType.WALL ? 0 : point;
+                            points[y, x] = convPoint;
                         }
                     }
                     var state = new State(width, height, playVerbose.totalTurn, playVerbose.turn, agent.x, agent.y, points);
@@ -152,11 +157,10 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     Console.WriteLine(state.ToString());
                     // 行動を決定する
                     var action = beamSearchAction(state, 2, 4);
-                    state.advance(action);
                     // 行動を変換する
                     var nx = state.character_.x_ + State.dx[action];
                     var ny = state.character_.y_ + State.dy[action];
-                    var type = playVerbose.field.tiles[ny * width + nx].type == KakomimasuClient.TileType.WALL ? KakomimasuClient.SendActionType.REMOVE : KakomimasuClient.SendActionType.MOVE;
+                    var type = playVerbose.field.tiles[ny * width + nx].type == KakomimasuClient.TileType.WALL && playVerbose.field.tiles[ny * width + nx].player != OWN_PLAYER ? KakomimasuClient.SendActionType.REMOVE : KakomimasuClient.SendActionType.MOVE;
                     var kakomimasuAction = new KakomimasuClient.SendAction()
                     {
                         agentId = 0,
