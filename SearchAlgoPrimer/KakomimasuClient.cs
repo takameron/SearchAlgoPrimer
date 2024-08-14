@@ -75,7 +75,7 @@ namespace SearchAlgoPrimer
             // 参加したゲームID
             public string gameId { get; set; }
             // 参加したゲームのインデックス（ゲーム詳細を取得した際のplayers配列内の自分のインデックス）
-            public int? index { get; set; }
+            public int index { get; set; }
             // 行動送信時に必要となるトークン（プレイヤー識別コード）
             public string pic { get; set; }
         }

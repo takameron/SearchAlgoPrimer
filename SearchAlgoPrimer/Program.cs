@@ -95,11 +95,11 @@ namespace MyApp // Note: actual namespace depends on the project name.
 
         static async void playKakomimasu()
         {
-            const int OWN_PLAYER = 0;
-
             KakomimasuClient client = new KakomimasuClient();
             // 参加する
             var connectionInfo = client.join().Result;
+            // 自身のプレイヤー番号を取得
+            int OWN_PLAYER = connectionInfo.index;
             // 開始時刻を取得できるまで待つ
             var playVerbose = client.waitStart(connectionInfo).Result;
             var start = playVerbose.startedAtUnixTime;
