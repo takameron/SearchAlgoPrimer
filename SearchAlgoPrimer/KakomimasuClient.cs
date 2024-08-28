@@ -23,13 +23,32 @@ namespace SearchAlgoPrimer
          */
         public async Task<ConnectionInfo> join()
         {
-            string startUrl = $"{baseUrl}/v1/matches/ai/players";
+            string startUrl = $"{baseUrl}/v1/matches/free/players";
             var startPayload = new JoinInfo
             {
                 guestName = "🍈C#くん",
                 aiName = "a1",
                 boardName = "A-1",
                 nAgent = 1
+            };
+            StringContent? startContent = new StringContent(JsonSerializer.Serialize(startPayload, jsonOptions), new MediaTypeHeaderValue("application/json"));
+            HttpResponseMessage? startResponse = await client.PostAsync(startUrl, startContent);
+            string? startResponseBody = await startResponse.Content.ReadAsStringAsync();
+            JsonElement game = JsonDocument.Parse(startResponseBody).RootElement;
+            return JsonSerializer.Deserialize<ConnectionInfo>(game.GetRawText());
+        }
+
+
+        /**
+         * ゲームに参加する（ゲームIDを指定）
+         */
+        public async Task<ConnectionInfo> join(string gameId)
+        {
+            string startUrl = $"{baseUrl}/v1/matches/${gameId}/players";
+            var startPayload = new JoinInfo
+            {
+                guestName = "🍈C#くん",
+                spec = "C#くんです。どうぞよろしく。"
             };
             StringContent? startContent = new StringContent(JsonSerializer.Serialize(startPayload, jsonOptions), new MediaTypeHeaderValue("application/json"));
             HttpResponseMessage? startResponse = await client.PostAsync(startUrl, startContent);
@@ -99,7 +118,15 @@ namespace SearchAlgoPrimer
 
                 string waitStartResponseBody = await waitStartResponse.Content.ReadAsStringAsync();
                 JsonElement game = JsonDocument.Parse(waitStartResponseBody).RootElement;
-                return JsonSerializer.Deserialize<PlayVerbose>(game.GetRawText(), jsonOptions);
+                try
+                {
+                    return JsonSerializer.Deserialize<PlayVerbose>(game.GetRawText(), jsonOptions);
+                }
+                catch (JsonException e)
+                {
+                    Console.WriteLine($"Error on wait API: {e.Message} response: {game.GetRawText()}");
+                    await Task.Delay(100);
+                }
             }
         }
 
