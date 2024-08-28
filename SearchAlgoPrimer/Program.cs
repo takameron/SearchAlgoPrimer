@@ -124,12 +124,13 @@ namespace MyApp // Note: actual namespace depends on the project name.
                 // 初期座標であれば適当な場所に置く
                 if (agent.x == -1 || agent.y == -1)
                 {
+                    Random rnd = new();
                     var firstAction = new KakomimasuClient.SendAction()
                     {
                         agentId = 0,
                         type = KakomimasuClient.SendActionType.PUT,
-                        x = 6,
-                        y = 6
+                        x = rnd.Next(playVerbose.field.width),
+                        y = rnd.Next(playVerbose.field.height)
                     };
                     // 動きを送信する
                     var firstActionInfo = new KakomimasuClient.SendActionInfo();
