@@ -97,7 +97,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
         {
             KakomimasuClient client = new KakomimasuClient();
             // 参加する
-            var connectionInfo = client.join("c223a631-77af-4c7c-847e-9191ea6d8141").Result;
+            var connectionInfo = client.join().Result;
             // 自身のプレイヤー番号を取得
             int OWN_PLAYER = connectionInfo.index;
             // 開始時刻を取得できるまで待つ

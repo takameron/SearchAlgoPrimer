@@ -44,7 +44,7 @@ namespace SearchAlgoPrimer
          */
         public async Task<ConnectionInfo> join(string gameId)
         {
-            string startUrl = $"{baseUrl}/v1/matches/${gameId}/players";
+            string startUrl = $"{baseUrl}/v1/matches/{gameId}/players";
             var startPayload = new JoinInfo
             {
                 guestName = "🍈C#くん",
@@ -170,9 +170,9 @@ namespace SearchAlgoPrimer
             // ゲーム入出可能なユーザIDのリスト
             public string[] reservedUsers { get; set; }
             // ゲーム開始時刻(UNIX時間)
-            public int startedAtUnixTime { get; set; }
+            public int? startedAtUnixTime { get; set; }
             // フィールド情報
-            public Field field { get; set; }
+            public Field? field { get; set; }
             // ゲームの総ターン数
             public int totalTurn { get; set; }
             // 参加プレイヤー数
