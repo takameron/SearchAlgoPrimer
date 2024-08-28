@@ -120,7 +120,6 @@ namespace MyApp // Note: actual namespace depends on the project name.
                 {
                     return;
                 }
-                // 盤面を変換する
                 var agent = playVerbose.players[OWN_PLAYER].agents[0];
                 // 初期座標であれば適当な場所に置く
                 if (agent.x == -1 || agent.y == -1)
@@ -154,7 +153,11 @@ namespace MyApp // Note: actual namespace depends on the project name.
                             points[y, x] = convPoint;
                         }
                     }
-                    var state = new State(width, height, playVerbose.totalTurn, playVerbose.turn, agent.x, agent.y, points);
+                    // 得点を取得する
+                    var pointInfo = playVerbose.players[OWN_PLAYER].point;
+                    int gameScore = pointInfo.areaPoint + pointInfo.wallPoint;
+                    // 盤面を変換する
+                    var state = new State(width, height, playVerbose.totalTurn, playVerbose.turn, agent.x, agent.y, points, gameScore);
                     // 盤面を表示
                     Console.WriteLine(state.ToString());
                     // 行動を決定する

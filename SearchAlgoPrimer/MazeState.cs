@@ -44,7 +44,7 @@ namespace SearchAlgoPrimer
                 }
         }
 
-        public MazeState(int width, int height, int endTern, int turn, int character_x, int character_y, int[,] points)
+        public MazeState(int width, int height, int endTern, int turn, int character_x, int character_y, int[,] points, int game_score)
         {
             this.W = width;
             this.H = height;
@@ -53,6 +53,7 @@ namespace SearchAlgoPrimer
             this.character_.x_ = character_x;
             this.character_.y_ = character_y;
             this.points_ = (int[,])points.Clone();
+            this.game_score_ = game_score;
         }
 
 
