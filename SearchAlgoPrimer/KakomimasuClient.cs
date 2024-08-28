@@ -136,7 +136,7 @@ namespace SearchAlgoPrimer
             {
                 var playVerbose = await wait(connectionInfo);
 
-                if (playVerbose.startedAtUnixTime != 0)
+                if (playVerbose.startedAtUnixTime != null && playVerbose.startedAtUnixTime != 0)
                 {
                     return playVerbose;
                 }
