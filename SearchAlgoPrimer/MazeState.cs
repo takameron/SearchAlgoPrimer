@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Collections.Specialized.BitVector32;
-using static System.Net.Mime.MediaTypeNames;
-using ScoreType = System.Int64;
+﻿using ScoreType = System.Int64;
 
 namespace SearchAlgoPrimer
 {

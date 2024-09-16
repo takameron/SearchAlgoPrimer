@@ -1,5 +1,4 @@
-﻿using System;
-using SearchAlgoPrimer;
+﻿using SearchAlgoPrimer;
 using State = SearchAlgoPrimer.MazeState;
 using ScoreType = System.Int64;
 using static SearchAlgoPrimer.MazeState;
@@ -184,7 +183,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     var sendActionInfo = new KakomimasuClient.SendActionInfo();
                     sendActionInfo.dryRun = false;
                     sendActionInfo.actions = new KakomimasuClient.SendAction[] { kakomimasuAction };
-                    var res = client.sendActions(connectionInfo, sendActionInfo).Result;
+                    var _ = client.sendActions(connectionInfo, sendActionInfo).Result;
                     // 前回の座標を更新
                     prevNx = nx;
                     prevNy = ny;
