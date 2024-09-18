@@ -14,7 +14,7 @@ namespace SearchAlgoPrimer
         public int[,] points_;
         private int turn_ = 0;
 
-        public Coord character_ = new Coord();
+        public List<Coord> characters;
         public int game_score_ = 0;
         public ScoreType evaluated_score_ = 0; // 探索上で評価したスコア
         public int first_action_ = -1; // 最初に選択した行動
@@ -23,13 +23,17 @@ namespace SearchAlgoPrimer
         {
             this.points_ = new int[H, W];
             Random rand = new Random(seed);
-            this.character_.y_ = rand.Next(H);
-            this.character_.x_ = rand.Next(W);
+            this.characters = new List<Coord>();
+            Coord character = new Coord {
+                y_ = rand.Next(H),
+                x_ = rand.Next(W)
+            };
+            this.characters.Add(character);
 
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
                 {
-                    if (y == character_.y_ && x == character_.x_)
+                    if (y == character.y_ && x == character.x_)
                     {
                         continue;
                     }
@@ -37,14 +41,13 @@ namespace SearchAlgoPrimer
                 }
         }
 
-        public MazeState(int width, int height, int endTern, int turn, int character_x, int character_y, int[,] points, int game_score)
+        public MazeState(int width, int height, int endTern, int turn, int[,] points, int game_score, List<Coord> characters)
         {
             this.W = width;
             this.H = height;
             this.END_TURN = endTern;
             this.turn_ = turn;
-            this.character_.x_ = character_x;
-            this.character_.y_ = character_y;
+            this.characters = characters;
             this.points_ = (int[,])points.Clone();
             this.game_score_ = game_score;
         }
@@ -62,28 +65,39 @@ namespace SearchAlgoPrimer
             this.evaluated_score_ = this.game_score_; // 簡単のため、まずはゲームスコアをそのまま盤面の評価とする
         }
 
-        // [どのゲームでも実装する] : 指定したactionでゲームを1ターン進める
-        public void advance(int action)
+        /// <summary>
+        /// [どのゲームでも実装する] : 指定したactionでゲームを1ターン進める
+        /// </summary>
+        /// <param name="action">行動</param>
+        /// <param name="index">キャラクタのインデックス</param>
+        public void advance(int action, int index = 0)
         {
-            this.character_.x_ += dx[action];
-            this.character_.y_ += dy[action];
-            var point = this.points_[this.character_.y_, this.character_.x_];
+            Coord character = this.characters[index];
+            character.x_ += dx[action];
+            character.y_ += dy[action];
+            this.characters[index] = character;
+            var point = this.points_[character.y_, character.x_];
             if (point > 0)
             {
                 this.game_score_ += point;
-                this.points_[this.character_.y_, this.character_.x_] = 0;
+                this.points_[character.y_, character.x_] = 0;
             }
             this.turn_++;
         }
 
-        // [どのゲームでも実装する] : 現在の状況でプレイヤーが可能な行動を全て取得する
-        public List<int> legalActions()
+        /// <summary>
+        /// [どのゲームでも実装する] : 現在の状況でプレイヤーが可能な行動を全て取得する
+        /// </summary>
+        /// <param name="index">キャラクタのインデックス</param>
+        /// <returns></returns>
+        public List<int> legalActions(int index = 0)
         {
             List<int> actions = new List<int>();
             for (int action = 0; action < 4; action++)
             {
-                int ty = this.character_.y_ + dy[action];
-                int tx = this.character_.x_ + dx[action];
+
+                int ty = this.characters[index].y_ + dy[action];
+                int tx = this.characters[index].x_ + dx[action];
                 if (ty >= 0 && ty < H && tx >= 0 && tx < W)
                 {
                     actions.Add(action);
@@ -113,7 +127,7 @@ namespace SearchAlgoPrimer
             {
                 for (int w = 0; w < W; w++)
                 {
-                    if (this.character_.y_ == h && this.character_.x_ == w)
+                    if (this.characters.Where(character => character.y_ == h && character.x_ == w).Any())
                     {
                         ss += '@'.ToString().PadLeft(padding);
                     }
@@ -138,6 +152,7 @@ namespace SearchAlgoPrimer
         {
             MazeState state = (MazeState)MemberwiseClone();
             state.points_ = (int[,])this.points_.Clone();
+            state.characters = new List<Coord> (this.characters);
             return state;
         }
 

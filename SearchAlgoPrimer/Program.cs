@@ -8,11 +8,16 @@ namespace MyApp // Note: actual namespace depends on the project name.
     internal class Program
     {
         const ScoreType INF = 1000000000L;
-
-        // ランダムに行動を決定する
-        static int randomAction(State state)
+ 
+        /// <summary>
+        /// ランダムに行動を決定する
+        /// </summary>
+        /// <param name="state">盤面</param>
+        /// <param name="index">キャラクタのインデックス</param>
+        /// <returns></returns>
+        static int randomAction(State state, int index)
         {
-            var legal_actions = state.legalActions();
+            var legal_actions = state.legalActions(index);
             Random mt_for_action = new Random(0);
             return legal_actions[mt_for_action.Next() % (legal_actions.Count())];
         }
@@ -38,7 +43,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
         }
 
         // ビームサーチで行動を決定する
-        static int beamSearchAction(State state, int beam_width, int beam_depth)
+        static int beamSearchAction(State state, int beam_width, int beam_depth, int index)
         {
             var now_beam = new PriorityQueue<State, State>(new MazeStateComparer());
             State best_state = state.copy();
@@ -55,11 +60,11 @@ namespace MyApp // Note: actual namespace depends on the project name.
                     }
 
                     var now_state = now_beam.Dequeue();
-                    var legal_actions = now_state.legalActions();
+                    var legal_actions = now_state.legalActions(index);
                     foreach (var action in legal_actions)
                     {
                         State next_state = now_state.copy();
-                        next_state.advance(action);
+                        next_state.advance(action, index);
                         next_state.evaluateScore();
                         if (depth == 0)
                         {
@@ -87,7 +92,7 @@ namespace MyApp // Note: actual namespace depends on the project name.
             {
                 //state.advance(randomAction(state));
                 //state.advance(greedyAction(state));
-                state.advance(beamSearchAction(state, 2, 4));
+                state.advance(beamSearchAction(state, 2, 4, 0));
                 Console.WriteLine(state.ToString());
             }
         }
@@ -108,8 +113,6 @@ namespace MyApp // Note: actual namespace depends on the project name.
             DateTimeOffset now = DateTimeOffset.UtcNow;
             int sleepTime = (int)Math.Max((long)start * 1000 - now.ToUnixTimeMilliseconds(), 0);
             Thread.Sleep(sleepTime);
-            int prevNx = -1;
-            int prevNy = -1;
             while (true)
             {
                 // ターン情報を取得
@@ -119,75 +122,89 @@ namespace MyApp // Note: actual namespace depends on the project name.
                 {
                     return;
                 }
-                var agent = playVerbose.players[OWN_PLAYER].agents[0];
-                // 初期座標であれば適当な場所に置く
-                if (agent.x == -1 || agent.y == -1)
+
+                // 盤面の情報を取得する
+                int height = playVerbose.field.height;
+                int width = playVerbose.field.width;
+                var points = new int[height, width];
+                for (int y = 0; y < height; y++)
                 {
-                    Random rnd = new();
-                    var firstAction = new KakomimasuClient.SendAction()
+                    for (int x = 0; x < width; x++)
                     {
-                        agentId = 0,
-                        type = KakomimasuClient.SendActionType.PUT,
-                        x = rnd.Next(playVerbose.field.width),
-                        y = rnd.Next(playVerbose.field.height)
-                    };
-                    // 動きを送信する
-                    var firstActionInfo = new KakomimasuClient.SendActionInfo();
-                    firstActionInfo.dryRun = false;
-                    firstActionInfo.actions = new KakomimasuClient.SendAction[] { firstAction };
-                    var firstActionRes = client.sendActions(connectionInfo, firstActionInfo).Result;
+                        var tile = playVerbose.field.tiles[y * width + x];
+                        int point = playVerbose.field.points[y * width + x];
+                        int convPoint = tile.player == OWN_PLAYER && tile.type == KakomimasuClient.TileType.WALL ? 0 : point;
+                        points[y, x] = convPoint;
+                    }
                 }
-                // それ以外はビームサーチで行動を決定する
-                else
-                {
-                    int height = playVerbose.field.height;
-                    int width = playVerbose.field.width;
-                    var points = new int[height, width];
-                    for (int y = 0; y < height; y++)
+                // 得点を取得する
+                var pointInfo = playVerbose.players[OWN_PLAYER].point;
+                int gameScore = pointInfo.areaPoint + pointInfo.wallPoint;
+                // 盤面を変換する
+                List<Coord> characters = new List<Coord>{};
+                foreach (var a in playVerbose.players[OWN_PLAYER].agents) {
+                    var character = new Coord {
+                        x_ = a.x,
+                        y_ = a.y
+                    };
+                    characters.Add(character);
+                }
+                var state = new State(width, height, playVerbose.totalTurn, playVerbose.turn, points, gameScore, characters);
+
+                // 送信する行動情報のリスト
+                var sendActions = new List<KakomimasuClient.SendAction> { };
+
+                int index = 0;
+                foreach (var agent in playVerbose.players[OWN_PLAYER].agents) {
+                    // 強制的に1エージェントで動かす
+                    // if (index != 0) continue;
+
+                    // 初期座標であれば適当な場所に置く
+                    if (agent.x == -1 || agent.y == -1)
                     {
-                        for (int x = 0; x < width; x++)
+                        Random rnd = new();
+                        var firstAction = new KakomimasuClient.SendAction()
                         {
-                            var tile = playVerbose.field.tiles[y * width + x];
-                            int point = playVerbose.field.points[y * width + x];
-                            int convPoint = tile.player == OWN_PLAYER && tile.type == KakomimasuClient.TileType.WALL ? 0 : point;
-                            points[y, x] = convPoint;
+                            agentId = index,
+                            type = KakomimasuClient.SendActionType.PUT,
+                            x = rnd.Next(playVerbose.field.width),
+                            y = rnd.Next(playVerbose.field.height)
+                        };
+                        sendActions.Add(firstAction);
+                    }
+                    // それ以外はビームサーチで行動を決定する
+                    else
+                    {
+                        // 行動を決定する
+                        var action = beamSearchAction(state, 2, 4, index);
+                        // 行動を変換する
+                        var nx = state.characters[index].x_ + State.dx[action];
+                        var ny = state.characters[index].y_ + State.dy[action];
+                        var type = playVerbose.field.tiles[ny * width + nx].type == KakomimasuClient.TileType.WALL && playVerbose.field.tiles[ny * width + nx].player != OWN_PLAYER ? KakomimasuClient.SendActionType.REMOVE : KakomimasuClient.SendActionType.MOVE;
+                        // 前回と同じ座標だったら移動しない(sendActionsは前回の行動が入っている)
+                        if (sendActions.Count >= index+1 && nx == sendActions[index].x && ny == sendActions[index].y && type == KakomimasuClient.SendActionType.MOVE) 
+                        {
+                            nx = state.characters[index].x_;
+                            ny = state.characters[index].y_;
                         }
+                        var kakomimasuAction = new KakomimasuClient.SendAction()
+                        {
+                            agentId = index,
+                            type = type,
+                            x = nx,
+                            y = ny
+                        };
+                        sendActions.Add(kakomimasuAction);
                     }
-                    // 得点を取得する
-                    var pointInfo = playVerbose.players[OWN_PLAYER].point;
-                    int gameScore = pointInfo.areaPoint + pointInfo.wallPoint;
-                    // 盤面を変換する
-                    var state = new State(width, height, playVerbose.totalTurn, playVerbose.turn, agent.x, agent.y, points, gameScore);
-                    // 盤面を表示
-                    Console.WriteLine(state.ToString());
-                    // 行動を決定する
-                    var action = beamSearchAction(state, 2, 4);
-                    // 行動を変換する
-                    var nx = state.character_.x_ + State.dx[action];
-                    var ny = state.character_.y_ + State.dy[action];
-                    var type = playVerbose.field.tiles[ny * width + nx].type == KakomimasuClient.TileType.WALL && playVerbose.field.tiles[ny * width + nx].player != OWN_PLAYER ? KakomimasuClient.SendActionType.REMOVE : KakomimasuClient.SendActionType.MOVE;
-                    // 前回と同じ座標だったら移動しない
-                    if (nx == prevNx && ny == prevNy && type == KakomimasuClient.SendActionType.MOVE) 
-                    {
-                        nx = state.character_.x_;
-                        ny = state.character_.y_;
-                    }
-                    var kakomimasuAction = new KakomimasuClient.SendAction()
-                    {
-                        agentId = 0,
-                        type = type,
-                        x = nx,
-                        y = ny
-                    };
-                    // 動きを送信する
-                    var sendActionInfo = new KakomimasuClient.SendActionInfo();
-                    sendActionInfo.dryRun = false;
-                    sendActionInfo.actions = new KakomimasuClient.SendAction[] { kakomimasuAction };
-                    var _ = client.sendActions(connectionInfo, sendActionInfo).Result;
-                    // 前回の座標を更新
-                    prevNx = nx;
-                    prevNy = ny;
+                    index++;
                 }
+                // 盤面を表示
+                Console.WriteLine(state.ToString());
+                // 動きを送信する
+                var sendActionInfo = new KakomimasuClient.SendActionInfo();
+                sendActionInfo.dryRun = false;
+                sendActionInfo.actions = sendActions.ToArray();
+                var _ = client.sendActions(connectionInfo, sendActionInfo).Result;
                 // 待つ
                 now = DateTime.Now;
                 sleepTime = (int)Math.Max(((long)start + (opsec + trsec) * playVerbose.turn) * 1000 - now.ToUnixTimeMilliseconds(), 0);
