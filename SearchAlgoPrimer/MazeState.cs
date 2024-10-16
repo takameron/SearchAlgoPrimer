@@ -62,8 +62,80 @@ namespace SearchAlgoPrimer
         // [どのゲームでも実装する] : 探索用の盤面評価をする
         public void evaluateScore()
         {
-            this.evaluated_score_ = this.game_score_; // 簡単のため、まずはゲームスコアをそのまま盤面の評価とする
+            //this.evaluated_score_ = this.game_score_; // 簡単のため、まずはゲームスコアをそのまま盤面の評価とする
+
+            int[,] maskedState = getMaskedState();
+
+            int totalScore = 0;
+            for (int h = 0; h < H; h++)
+            {
+                for (int w = 0; w < W; w++)
+                {
+                    if (maskedState[h, w] == 1) totalScore += points_[h, w];
+                }
+            }
+        
+            this.evaluated_score_ = totalScore;
         }
+
+        // 自身のプレイヤーのタイルと囲まれたタイルのフラグを立てます
+        // 囲まれたタイルの内側で別のプレイヤーのタイルが存在する状況は考慮しません
+        public int[,] getMaskedState()
+        {
+            /**
+             タイルに上下左右1マスずつ余白を持たせ、一番左上は確実に囲まれていない状態にする
+
+             一番左上のタイルから順に8方向に隣接するタイルを参照し、そのタイルが壁でなければ囲まれていないと判定する。
+             壁であれば囲まれていると判定された状態のままスキップするため隣接するタイルのチェックは行われず、
+             実際に囲まれているタイルは囲まれている判定のままとなる。
+             */
+
+            // 上下左右に1マスずつ余白を持たせる
+            int[,] maskedState = new int[H+2, W+2];
+            // すべて囲まれていると仮定して初期化
+            for (int h = 0; h < H+2; h++)
+            {
+                for (int w = 0; w < W+2; w++)
+                {
+                    maskedState[h, w] = 1;
+                }
+            }
+
+            // ある一点が囲まれていないと想定し、その隣隣と順にチェックしていく
+            checkTile(maskedState, 0, 0);
+
+            // 余白を削除する
+            int[,] trimMaskedState = new int[H, W];
+            for (int h = 1; h < H+1; h++) {
+                for (int w = 1; w < W+1; w++) {
+                    trimMaskedState[h, w] = maskedState[h, w];
+                }
+            }
+
+            return trimMaskedState;
+        }
+
+        private void checkTile(int[,] maskedState, int x, int y) {
+            // タイルの範囲を超えている
+            if (x < 0 || x > W+1 || y < 0 || y > H+1) return;
+            // すでに囲まれていないと判定されている
+            else if (maskedState[y, x] == 0) return;
+            // 自分のタイル
+            else if (points_[y, x] == 0) return;
+            // 囲まれていないと判定して、隣接するタイルをチェックする
+            else {
+                maskedState[y, x] = 0;
+                checkTile(maskedState, x+1, y+1);
+                checkTile(maskedState, x+1, y);
+                checkTile(maskedState, x+1, y-1);
+                checkTile(maskedState, x, y+1);
+                checkTile(maskedState, x, y-1);
+                checkTile(maskedState, x-1, y+1);
+                checkTile(maskedState, x-1, y);
+                checkTile(maskedState, x-1, y-1);
+            }
+        }
+        
 
         /// <summary>
         /// [どのゲームでも実装する] : 指定したactionでゲームを1ターン進める
